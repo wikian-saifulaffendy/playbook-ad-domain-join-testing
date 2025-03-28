@@ -116,9 +116,9 @@
       ignore_errors: yes
       no_log: true
       
-    - name: Wait for 30 seconds after domain join
+    - name: Wait for 20 seconds after domain join
       pause:
-        seconds: 30 
+        seconds: 20 
           
     - name: Print server join domain error message if any
       debug:
@@ -155,12 +155,12 @@
         name: sssd
         state: restarted
       vars:
-        ansible_command_timeout: 30  # 30 seconds timeout for this service restart
-        ansible_timeout: 30          # General timeout
+        ansible_command_timeout: 20  # 20 seconds timeout for this service restart
+        ansible_timeout: 20          # General timeout
     
-    - name: Wait for 30 seconds after restarting sssd
+    - name: Wait for 10 seconds after restarting sssd
       pause:
-        seconds: 30  
+        seconds: 10  
 
     # Verification section
     - name: Verify domain join configuration
