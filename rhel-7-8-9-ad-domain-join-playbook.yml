@@ -127,7 +127,7 @@
           
     - name: Modify SSSD Configuration in RHEL7, 8 and 9
       copy:
-        src: ./files/sssd.conf
+        src: sssd.conf
         dest: /etc/sssd/sssd.conf
         mode: "0600"
 
@@ -146,7 +146,7 @@
         
     - name: Copy LDAP CERT
       copy:
-        src: wikilab-ca.cer
+        src: Wikilab-ca.cer
         dest: /etc/openldap/certs
         mode: "0655"
 
