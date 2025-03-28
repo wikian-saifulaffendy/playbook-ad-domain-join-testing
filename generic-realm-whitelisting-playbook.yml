@@ -1,0 +1,16 @@
+---
+- name: Detect and Execute OS-specific tasks
+  hosts: "{{host_list}}"
+  gather_facts: yes
+  vars:
+    whitelist_users: "{{ whitelist_users_awx | default('') }}"
+    whitelist_groups: "{{ whitelist_groups_awx| default('') }}"    
+  tasks:
+  - name: Execute command for user
+    shell: realm permit {{ whitelist_users }}
+    when: whitelist_users != ''
+    register: command_output
+  - name: Execute command for group
+    shell: realm permit -g {{ whitelist_groups }}
+    when: whitelist_groups != ''
+    register: command_output
