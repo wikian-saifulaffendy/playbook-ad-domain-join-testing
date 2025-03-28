@@ -201,7 +201,7 @@
       shell: sshpass -p "{{ password }}" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 {{ username }}@{{ ansible_host }} echo "SSH login successful"
       register: ssh_test_before
       ignore_errors: yes
-      no_log: true
+      #no_log: true
       
     - name: Print SSH test result before blacklisting
       debug:
@@ -233,7 +233,7 @@
       shell: sshpass -p "{{ password }}" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 {{ username }}@{{ ansible_host }} echo "SSH login successful"
       register: ssh_test_after
       ignore_errors: yes
-      no_log: true
+      #no_log: true
       
     - name: Print result of SSH login test after blacklisting
       debug:
