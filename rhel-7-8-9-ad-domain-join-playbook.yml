@@ -1,7 +1,7 @@
 ---
 - name: Detect and Execute RHEL 789 OS-specific tasks
-  hosts: "{{ host_list }}"
-  #hosts: all
+  #hosts: "{{ host_list }}"
+  hosts: all
   gather_facts: yes
   vars:
     domain_name: wikilab.asia
