@@ -250,7 +250,7 @@
       ignore_errors: yes
       #no_log: true
 
-     - name: Print full SSH test output
+    - name: Print full SSH test output
       debug:
         var: ssh_test_before
         verbosity: 0  # Set to 0 to always show, or a higher number to only show with increased verbosity
