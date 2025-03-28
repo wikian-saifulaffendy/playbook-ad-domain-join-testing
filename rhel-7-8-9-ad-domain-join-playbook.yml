@@ -252,17 +252,17 @@
 
     - name: Print full SSH test output
       debug:
-        var: ssh_test_before
+        var: ssh_test_after
         verbosity: 0  # Set to 0 to always show, or a higher number to only show with increased verbosity
         
     - name: Print detailed SSH test results
       debug:
         msg: |
           SSH Test Results for {{ username }}@{{ ansible_facts['fqdn'] }}:
-          Return Code: {{ ssh_test_before.rc }}
-          Stdout: {{ ssh_test_before.stdout }}
-          Stderr: {{ ssh_test_before.stderr }}
-          Command: {{ ssh_test_before.cmd }} 
+          Return Code: {{ ssh_test_after.rc }}
+          Stdout: {{ ssh_test_after.stdout }}
+          Stderr: {{ ssh_test_after.stderr }}
+          Command: {{ ssh_test_after.cmd }} 
 
       
     - name: Print result of SSH login test after blacklisting
