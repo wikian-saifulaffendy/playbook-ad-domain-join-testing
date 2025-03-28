@@ -127,7 +127,7 @@
           
     - name: Modify SSSD Configuration in RHEL7, 8 and 9
       copy:
-        src: sssd.conf
+        src: ./files/sssd.conf
         dest: /etc/sssd/sssd.conf
         mode: "0600"
 
