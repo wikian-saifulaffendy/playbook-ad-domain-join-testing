@@ -268,8 +268,9 @@
       debug:
         var: ssh_test_before
         verbosity: 0
-      when: not already_joined
-        
+      no_log: true
+      when: not already_joined 
+      
     - name: Print detailed SSH test results
       debug:
         msg: |
