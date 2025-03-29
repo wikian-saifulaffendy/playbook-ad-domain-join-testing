@@ -49,28 +49,58 @@
         - name: Add host to domain_join group if needed
           group_by:
             key: "domain_join_{{ not already_joined }}"
-      
-        # Collect facts about all hosts that need joining
-        - name: Check if any hosts need domain joining
+
+        # check if any hosts need domain joining - runs on controller only once
+        - name: Collect info about hosts needing domain join
           set_fact:
-            any_hosts_need_joining: true
-          when: not already_joined
-          
-        - name: Share host status with controller
+            host_needs_joining: "{{ not_already_joined }}"
+
+        - name: Aggregate domain join status across all hosts
           set_fact:
-            hosts_needing_join: "{{ hosts_needing_join | default([]) + [inventory_hostname] }}"
-          when: not already_joined
-      
-        # Stop play if all hosts are already joined
-        - name: Check if any host needs domain joining
-          fail:
-            msg: "All hosts are already joined to domain. Playbook will end."
-          when: groups['domain_join_True'] is not defined or groups['domain_join_True']|length == 0
+            all_hosts_joined: "{{ (all_hosts_joined | default(true)) and (hostvars[item].host_needs_joining | default(false) == false) }}"
+          loop: "{{ ansible_play_hosts }}"
+          run_once: true
+          delegate_to: localhost
+    
+        - name: Display domain join status summary
+          debug:
+            msg: "All hosts are already joined to domain. Remaining tasks will be skipped."
+          when: all_hosts_joined | default(false)
+          run_once: true
+          delegate_to: localhost
+    
+        - name: Set skip_remaining_tasks flag
+          set_fact:
+            skip_remaining_tasks: "{{ all_hosts_joined | default(false) }}"
           delegate_to: localhost
           run_once: true
-          ignore_errors: no
+    
+       # # Collect facts about all hosts that need joining
+        #- name: Check if any hosts need domain joining
+         # set_fact:
+          #  any_hosts_need_joining: true
+          #when: not already_joined
+          
+        #- name: Share host status with controller
+        #  set_fact:
+        #    hosts_needing_join: "{{ hosts_needing_join | default([]) + [inventory_hostname] }}"
+        #  when: not already_joined
+      
+      #  # Stop play if all hosts are already joined
+       # - name: Check if any host needs domain joining
+        #  fail:
+         ##when: groups['domain_join_True'] is not defined or groups['domain_join_True']|length == 0
+          #delegate_to: localhost
+          #run_once: true
+          #ignore_errors: no
 
   tasks:
+    
+    # Skip all tasks if all hosts are already joined
+    - name: Skip all tasks if all hosts are joined
+      meta: end_play
+      when: skip_remaining_tasks | default(false)
+
     - name: Check if running on RHEL 789
       fail:
         msg: "This playbook only runs on RHEL 789 servers."
