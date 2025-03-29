@@ -297,7 +297,7 @@
           Stderr: {{ ssh_test_after.stderr }}
           Command: {{ ssh_test_after.cmd }}
       when: not already_joined
-      no_log: true
+      #no_log: true
 
     - name: Print result of SSH login test after blacklisting
       debug:
