@@ -75,18 +75,18 @@
       run_once: true
       delegate_to: localhost
 
-   - name: Display domain join status summary for all hosts
-     debug:
-       msg: |
-         Domain Join Status Summary:
-         {{ host_status_list }}
-         {% if all_hosts_joined | default(false) %}
-         All hosts are already joined to domain. Remaining tasks will be skipped.
-         {% else %}
-         Some hosts need to be joined to domain. Proceeding with domain join for those hosts.
-         {% endif %}
-     run_once: true
-     delegate_to: localhost
+    - name: Display domain join status summary for all hosts
+      debug:
+        msg: |
+          Domain Join Status Summary:
+          {{ host_status_list }}
+          {% if all_hosts_joined | default(false) %}
+          All hosts are already joined to domain. Remaining tasks will be skipped.
+          {% else %}
+          Some hosts need to be joined to domain. Proceeding with domain join for those hosts.
+          {% endif %}
+      run_once: true
+      delegate_to: localhost
       
     #- name: Display domain join status summary
      # debug:
