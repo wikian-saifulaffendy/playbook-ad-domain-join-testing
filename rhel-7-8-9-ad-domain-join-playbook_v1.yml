@@ -71,7 +71,7 @@
      # Display comprehensive summary of all hosts
     - name: Display domain join status summary for all hosts
       debug:
-        msg: |
+        msg: |-
           Domain Join Status Summary:
           {% for host_info in host_status_summary %}
           - {{ host_info.host }}: {{ 'Already joined to domain' if host_info.already_joined else 'Needs to be joined to domain' }}
