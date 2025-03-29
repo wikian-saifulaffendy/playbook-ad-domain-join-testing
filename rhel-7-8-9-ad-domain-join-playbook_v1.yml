@@ -59,13 +59,38 @@
       loop: "{{ ansible_play_hosts }}"
       run_once: true
       delegate_to: localhost
-      
-    - name: Display domain join status summary
-      debug:
-        msg: "All hosts are already joined to domain. Remaining tasks will be skipped."
-      when: all_hosts_joined | default(false)
+
+     # Create a summary list of all hosts and their status
+    - name: Create host status summary
+      set_fact:
+        host_status_summary: "{{ host_status_summary | default([]) + [{'host': item, 'already_joined': hostvars[item].already_joined | default(false)}] }}"
+      loop: "{{ ansible_play_hosts }}"
       run_once: true
       delegate_to: localhost
+    
+     # Display comprehensive summary of all hosts
+    - name: Display domain join status summary for all hosts
+      debug:
+        msg: |
+          Domain Join Status Summary:
+          {% for host_info in host_status_summary %}
+          - {{ host_info.host }}: {{ 'Already joined to domain' if host_info.already_joined else 'Needs to be joined to domain' }}
+          {% endfor %}
+        
+          {% if all_hosts_joined | default(false) %}
+          All hosts are already joined to domain. Remaining tasks will be skipped.
+          {% else %}
+          Some hosts need to be joined to domain. Proceeding with domain join for those hosts.
+          {% endif %}
+      run_once: true
+      delegate_to: localhost  
+      
+    #- name: Display domain join status summary
+     # debug:
+      #  msg: "All hosts are already joined to domain. Remaining tasks will be skipped."
+      #when: all_hosts_joined | default(false)
+      #run_once: true
+      #delegate_to: localhost
       
     - name: Set skip_remaining_tasks flag
       set_fact:
