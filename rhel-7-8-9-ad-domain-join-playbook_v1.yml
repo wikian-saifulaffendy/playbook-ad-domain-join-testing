@@ -10,97 +10,75 @@
 
   pre_tasks:
     # Check if any hosts need domain joining - runs before main tasks
-    - name: Check if any hosts need domain joining
-      block:
-        - name: Check if user {{ username }} exists
-          shell: getent passwd "{{ username }}"
-          register: check_user
-          changed_when: False
-          ignore_errors: True
-          
-        - name: Check if LDAP port is in use
-          shell: lsof -i:636
-          register: check_ldap
-          changed_when: False
-          ignore_errors: True
-          
-        - name: Check realm package installation
-          shell: rpm -q realmd
-          register: realmd_installed
-          changed_when: False
-          ignore_errors: True
-          
-        - name: Check realm list if realm is installed
-          shell: realm list | grep -E "realm-name|domain-name"
-          register: check_realm
-          changed_when: False
-          ignore_errors: True
-          when: realmd_installed.rc == 0
-          
-        - name: Determine if server is already properly joined to domain
-          set_fact:
-            already_joined: "{{ check_user.rc == 0 and check_ldap.rc == 0 and (check_realm.rc == 0 if realmd_installed.rc == 0 else false) }}"
-            
-        - name: Display domain join status
-          debug:
-            msg: "{{ 'Server is already properly joined to the domain.' if already_joined else 'Server needs to be joined to the domain.' }}"
-          
-        # Create a group for hosts that need domain joining
-        - name: Add host to domain_join group if needed
-          group_by:
-            key: "domain_join_{{ not already_joined }}"
-
-        # check if any hosts need domain joining - runs on controller only once
-        - name: Collect info about hosts needing domain join
-          set_fact:
-            host_needs_joining: "{{ not_already_joined }}"
-
-        - name: Aggregate domain join status across all hosts
-          set_fact:
-            all_hosts_joined: "{{ (all_hosts_joined | default(true)) and (hostvars[item].host_needs_joining | default(false) == false) }}"
-          loop: "{{ ansible_play_hosts }}"
-          run_once: true
-          delegate_to: localhost
-    
-        - name: Display domain join status summary
-          debug:
-            msg: "All hosts are already joined to domain. Remaining tasks will be skipped."
-          when: all_hosts_joined | default(false)
-          run_once: true
-          delegate_to: localhost
-    
-        - name: Set skip_remaining_tasks flag
-          set_fact:
-            skip_remaining_tasks: "{{ all_hosts_joined | default(false) }}"
-          delegate_to: localhost
-          run_once: true
-    
-       # # Collect facts about all hosts that need joining
-        #- name: Check if any hosts need domain joining
-         # set_fact:
-          #  any_hosts_need_joining: true
-          #when: not already_joined
-          
-        #- name: Share host status with controller
-        #  set_fact:
-        #    hosts_needing_join: "{{ hosts_needing_join | default([]) + [inventory_hostname] }}"
-        #  when: not already_joined
+    - name: Check if user {{ username }} exists
+      shell: getent passwd "{{ username }}"
+      register: check_user
+      changed_when: False
+      ignore_errors: True
       
-      #  # Stop play if all hosts are already joined
-       # - name: Check if any host needs domain joining
-        #  fail:
-         ##when: groups['domain_join_True'] is not defined or groups['domain_join_True']|length == 0
-          #delegate_to: localhost
-          #run_once: true
-          #ignore_errors: no
+    - name: Check if LDAP port is in use
+      shell: lsof -i:636
+      register: check_ldap
+      changed_when: False
+      ignore_errors: True
+      
+    - name: Check realm package installation
+      shell: rpm -q realmd
+      register: realmd_installed
+      changed_when: False
+      ignore_errors: True
+      
+    - name: Check realm list if realm is installed
+      shell: realm list | grep -E "realm-name|domain-name"
+      register: check_realm
+      changed_when: False
+      ignore_errors: True
+      when: realmd_installed.rc == 0
+      
+    - name: Determine if server is already properly joined to domain
+      set_fact:
+        already_joined: "{{ check_user.rc == 0 and check_ldap.rc == 0 and (check_realm.rc == 0 if realmd_installed.rc == 0 else false) }}"
+        
+    - name: Display domain join status
+      debug:
+        msg: "{{ 'Server is already properly joined to the domain.' if already_joined else 'Server needs to be joined to the domain.' }}"
+      
+    # Create a group for hosts that need domain joining
+    - name: Add host to domain_join group if needed
+      group_by:
+        key: "domain_join_{{ not already_joined }}"
+    
+    # Check if any hosts need domain joining - runs on controller only once  
+    - name: Collect info about hosts needing domain join
+      set_fact:
+        host_needs_joining: "{{ not already_joined }}"
+      
+    - name: Aggregate domain join status across all hosts
+      set_fact:
+        all_hosts_joined: "{{ (all_hosts_joined | default(true)) and (hostvars[item].host_needs_joining | default(false) == false) }}"
+      loop: "{{ ansible_play_hosts }}"
+      run_once: true
+      delegate_to: localhost
+      
+    - name: Display domain join status summary
+      debug:
+        msg: "All hosts are already joined to domain. Remaining tasks will be skipped."
+      when: all_hosts_joined | default(false)
+      run_once: true
+      delegate_to: localhost
+      
+    - name: Set skip_remaining_tasks flag
+      set_fact:
+        skip_remaining_tasks: "{{ all_hosts_joined | default(false) }}"
+      delegate_to: localhost
+      run_once: true
 
   tasks:
-    
     # Skip all tasks if all hosts are already joined
     - name: Skip all tasks if all hosts are joined
       meta: end_play
       when: skip_remaining_tasks | default(false)
-
+      
     - name: Check if running on RHEL 789
       fail:
         msg: "This playbook only runs on RHEL 789 servers."
@@ -111,17 +89,17 @@
       debug:
         var: ansible_distribution_version
       register: os_version
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
 
     - name: Extract OS major version from facts
       set_fact:
         ansible_distribution_major_version: "{{ ansible_distribution_version.split('.')[0] }}"
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
 
     - name: Print the OS major version
       debug:
         var: ansible_distribution_major_version
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
     
     # Join domain section - only runs if server is not already joined
     - name: Install realm package
@@ -131,7 +109,7 @@
             fi
       register: check_realmpkg
       failed_when: "'Error: No package realmd available' in check_realmpkg.stdout"
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
 
     - name: Install realm package along with sssd
       package:
@@ -147,31 +125,31 @@
         - oddjob-mkhomedir
         - samba-common-tools
         - lsof
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
 
     - name: Join domain (RHEL 7, 8, 9)
       shell: echo "{{password}}" | realm join {{domain_name}} -U {{username}} --verbose
       register: join_domain
       ignore_errors: yes
       no_log: true
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
       
     - name: Wait for 20 seconds after domain join
       pause:
         seconds: 20 
-      when: inventory_hostname in groups['domain_join_True'] and join_domain is defined
+      when: not already_joined and join_domain is defined
           
     - name: Print server join domain error message if any
       debug:
         var: join_domain.stderr_lines
-      when: inventory_hostname in groups['domain_join_True'] and join_domain is defined and join_domain.rc != 0
+      when: not already_joined and join_domain is defined and join_domain.rc != 0
           
     - name: Modify SSSD Configuration in RHEL7, 8 and 9
       copy:
         src: sssd.conf
         dest: /etc/sssd/sssd.conf
         mode: "0600"
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
 
     - name: Add cert path to the ldap.conf in RHEL7, 8 and 9
       lineinfile:
@@ -179,21 +157,21 @@
         insertafter: BOF
         line: 'TLS_CACERT      /etc/openldap/certs/wikilab-ca.cer'
         state: present
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
 
     - name: Start and enable oddjobd service
       service:
         name: oddjobd.service
         state: started
         enabled: yes
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
         
     - name: Copy LDAP CERT
       copy:
         src: Wikilab-ca.cer
         dest: /etc/openldap/certs
         mode: "0655"
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
 
     - name: Restart sssd
       service:
@@ -202,12 +180,12 @@
       vars:
         ansible_command_timeout: 20  # 20 seconds timeout for this service restart
         ansible_timeout: 20          # General timeout
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
     
     - name: Wait for 10 seconds after restarting sssd
       pause:
         seconds: 10
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
 
     # Verification section - only for hosts that needed domain joining
     - name: Verify domain join configuration
@@ -241,7 +219,7 @@
               {% else %}
               Check Pass: LDAP port 636 is listening on {{ ansible_facts['fqdn'] }}
               {% endif %}
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
 
     # SSH testing - only for hosts that needed domain joining
     - name: Test SSH login before blacklisting (using execution nodes)
@@ -249,13 +227,14 @@
       shell: sshpass -p "{{ password }}" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 {{ username }}@{{ ansible_host }} echo "SSH login successful"
       register: ssh_test_before
       ignore_errors: yes
-      when: inventory_hostname in groups['domain_join_True']
+      #no_log: true
+      when: not already_joined
 
     - name: Print full SSH test output
       debug:
         var: ssh_test_before
         verbosity: 0
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
         
     - name: Print detailed SSH test results
       debug:
@@ -265,7 +244,7 @@
           Stdout: {{ ssh_test_before.stdout }}
           Stderr: {{ ssh_test_before.stderr }}
           Command: {{ ssh_test_before.cmd }} 
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
           
     - name: Print SSH test result before blacklisting
       debug:
@@ -275,26 +254,26 @@
           {% else %}
           Check Pass: Login as AD user '{{ username }}' on {{ ansible_facts['fqdn'] }} was successful
           {% endif %}
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
 
     # Blacklisting section - only for hosts that needed domain joining
     - name: Blacklisting all Users
       shell: realm permit -x "{{ username }}"
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
 
     - name: Wait for 10 seconds after blacklisting users
       pause:
         seconds: 10
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
 
     - name: Blacklisting all Groups
       shell: realm permit -xg "{{ username }}"
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
 
     - name: Wait for 10 seconds after blacklisting groups
       pause:
         seconds: 10
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
 
     # Test blacklisting with SSH test
     - name: Test SSH login after blacklisting (using execution nodes)
@@ -302,13 +281,14 @@
       shell: sshpass -p "{{ password }}" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 {{ username }}@{{ ansible_host }} echo "SSH login successful"
       register: ssh_test_after
       ignore_errors: yes
-      when: inventory_hostname in groups['domain_join_True']
+      #no_log: true
+      when: not already_joined
 
     - name: Print full SSH test output
       debug:
         var: ssh_test_after
         verbosity: 0
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
         
     - name: Print detailed SSH test results
       debug:
@@ -318,12 +298,12 @@
           Stdout: {{ ssh_test_after.stdout }}
           Stderr: {{ ssh_test_after.stderr }}
           Command: {{ ssh_test_after.cmd }}
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
 
     - name: Print result of SSH login test after blacklisting
       debug:
         msg: "{{ 'All Users are blacklisted successfully - SSH access denied as expected' if ssh_test_after.rc != 0 else 'WARNING: User still has SSH access after blacklisting' }}"
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
 
     # Final status report - only for hosts that needed domain joining
     - name: Print final result of all checks
@@ -334,4 +314,4 @@
           {% else %}
           Failed to join server {{ ansible_facts['fqdn'] }} to the domain. Check manually or rerun playbook.
           {% endif %}
-      when: inventory_hostname in groups['domain_join_True']
+      when: not already_joined
