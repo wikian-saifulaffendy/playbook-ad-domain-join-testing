@@ -236,9 +236,9 @@
           debug:
             msg: 
               - "{% if check_user_after.rc != 0 %}"
-              - "Check failed: AD user "{{ username }}" does not exist on {{ ansible_facts['fqdn'] }}"
+              - "Check failed: AD user '{{ username }}' does not exist on {{ ansible_facts['fqdn'] }}"
               - "{% else %}"
-              - "Check Pass: AD user "{{ username }}" exists on {{ ansible_facts['fqdn'] }}"
+              - "Check Pass: AD user '{{ username }}' exists on {{ ansible_facts['fqdn'] }}"
               - "{% endif %}"
               
         - name: Verify LDAP port is in use
