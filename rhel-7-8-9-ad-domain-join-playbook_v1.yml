@@ -72,15 +72,12 @@
       debug:
         msg: >-
           {{
+            ['Domain Join Status Summary:'] +
             [
-              'Domain Join Status Summary:'
-            ]
-            +
-            host_status_summary | map('extract', 'host') | zip(
-              host_status_summary | map(attribute='already_joined') | map('ternary', 'Already joined to domain', 'Needs to be joined to domain')
-            ) | map('join', ': ') | list
-            +
-            [
+              '- ' ~ item.host ~ ': ' ~
+              ( 'Already joined to domain' if item.already_joined else 'Needs to be joined to domain' )
+              for item in host_status_summary
+            ] + [
               (all_hosts_joined | default(false))
               | ternary(
                   'All hosts are already joined to domain. Remaining tasks will be skipped.',
