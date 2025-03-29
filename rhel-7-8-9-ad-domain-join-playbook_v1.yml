@@ -70,10 +70,10 @@
     
     - name: Display domain join status summary for all hosts
       debug:
-        msg: |-
-          Domain Join Status Summary:
+        msg: |
+          Domain Join Status Summary: 
           {% for host_info in host_status_summary %}
-          - {{ host_info.host }}: {{ 'Already joined to domain' if host_info.already_joined else 'Needs to be joined to domain' }}
+           - {{ host_info.host }}: {{ 'Already joined to domain' if host_info.already_joined else 'Needs to be joined to domain' }}
           {% endfor %}
       
           {% if all_hosts_joined | default(false) %}
