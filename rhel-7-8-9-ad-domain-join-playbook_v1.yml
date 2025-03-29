@@ -68,30 +68,30 @@
       run_once: true
       delegate_to: localhost
     
-     # Display comprehensive summary of all hosts
-    #- name: Display domain join status summary for all hosts
-     # debug:
-      #  msg: |-
-       #   Domain Join Status Summary:
-        #  {% for host_info in host_status_summary %}
-         # - {{ host_info.host }}: {{ 'Already joined to domain' if host_info.already_joined else 'Needs to be joined to domain' }}
-          #{% endfor %}
-        
-          #{% if all_hosts_joined | default(false) %}
-          #All hosts are already joined to domain. Remaining tasks will be skipped.
-          #{% else %}
-          #Some hosts need to be joined to domain. Proceeding with domain join for those hosts.
-          #{% endif %}
-      #run_once: true
-      #delegate_to: localhost  
-     
-      # Display comprehensive summary of all hosts
     - name: Display domain join status summary for all hosts
       debug:
-        msg: "Domain Join Status Summary:\n{% for host_info in host_status_summary %}\n- {{ host_info.host }}: {{ 'Already joined to domain' if host_info.already_joined else 'Needs to be joined to domain' }}{% endfor %}\n\n{% if all_hosts_joined | default(false) %}\nAll hosts are already joined to domain. Remaining tasks will be skipped.{% else %}\nSome hosts need to be joined to domain. Proceeding with domain join for those hosts.{% endif %}"
+        msg: >-
+          {{
+            [
+              'Domain Join Status Summary:'
+            ]
+            +
+            host_status_summary | map('extract', 'host') | zip(
+              host_status_summary | map(attribute='already_joined') | map('ternary', 'Already joined to domain', 'Needs to be joined to domain')
+            ) | map('join', ': ') | list
+            +
+            [
+              (all_hosts_joined | default(false))
+              | ternary(
+                  'All hosts are already joined to domain. Remaining tasks will be skipped.',
+                  'Some hosts need to be joined to domain. Proceeding with domain join for those hosts.'
+              )
+            ]
+          }}
       run_once: true
-      delegate_to: localhost  
-    
+      delegate_to: localhost
+     
+      
     #- name: Display domain join status summary
      # debug:
       #  msg: "All hosts are already joined to domain. Remaining tasks will be skipped."
