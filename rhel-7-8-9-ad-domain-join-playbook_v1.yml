@@ -234,7 +234,7 @@
           
         - name: Print result ID for AD user
           debug:
-            msg: |-
+            msg: 
               - "{% if check_user_after.rc != 0 %}"
               - "Check failed: AD user "{{ username }}" does not exist on {{ ansible_facts['fqdn'] }}"
               - "{% else %}"
@@ -249,7 +249,7 @@
 
         - name: Print result LDAP port is in use
           debug:
-            msg: |-
+            msg: 
               - "{% if check_ldap_after.rc != 0 %}"
               - "Check failed: LDAP port 636 is not listening on {{ ansible_facts['fqdn'] }}"
               - "{% else %}"
@@ -275,7 +275,7 @@
       
     - name: Print detailed SSH test results
       debug:
-        msg: |-
+        msg: 
           - "SSH Test Results for {{ username }}@{{ ansible_facts['fqdn'] }}:"
           - "Return Code: {{ ssh_test_before.rc }}"
           - "Stdout: {{ ssh_test_before.stdout }}"
@@ -285,7 +285,7 @@
           
     - name: Print SSH test result before blacklisting
       debug:
-        msg: |-
+        msg: 
           - "{% if ssh_test_before.rc != 0 %}"
           - "Check failed: Unable to login as AD user '{{ username }}' on {{ ansible_facts['fqdn'] }}"
           - "{% else %}"
@@ -330,7 +330,7 @@
         
     - name: Print detailed SSH test results
       debug:
-        msg: |-
+        msg: 
           - "SSH Test Results for {{ username }}@{{ ansible_facts['fqdn'] }}:"
           - "Return Code: {{ ssh_test_after.rc }}"
           - "Stdout: {{ ssh_test_after.stdout }}"
@@ -347,7 +347,7 @@
     # Final status report - only for hosts that needed domain joining
     - name: Print final result of all checks
       debug:
-        msg: |-
+        msg: 
           - "{% if check_user_after.rc == 0 and check_ldap_after.rc == 0 %}"
           - "Successfully joined server {{ ansible_facts['fqdn'] }} to the domain"
           - "{% else %}"
