@@ -41,7 +41,7 @@
         
     - name: Display domain join status
       debug:
-        msg: |-
+        msg: 
           - "{{ 'Server is already properly joined to the domain.' if already_joined else 'Server needs to be joined to the domain.' }}"
       
     # Create a group for hosts that need domain joining
