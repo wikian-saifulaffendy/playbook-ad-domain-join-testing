@@ -68,12 +68,12 @@
       run_once: true
       delegate_to: localhost
     
-   - name: Create host status summary
-     set_fact:
-       host_status_list: "{{ host_status_list | default('') + '- ' + item + ': ' + (hostvars[item].already_joined | default(false) | ternary('Already joined to domain', 'Needs to be joined to domain')) + '\n' }}"
-     loop: "{{ ansible_play_hosts }}"
-     run_once: true
-     delegate_to: localhost
+    - name: Create host status summary
+      set_fact:
+        host_status_list: "{{ host_status_list | default('') + '- ' + item + ': ' + (hostvars[item].already_joined | default(false) | ternary('Already joined to domain', 'Needs to be joined to domain')) + '\n' }}"
+      loop: "{{ ansible_play_hosts }}"
+      run_once: true
+      delegate_to: localhost
 
    - name: Display domain join status summary for all hosts
      debug:
