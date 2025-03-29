@@ -69,22 +69,29 @@
       delegate_to: localhost
     
      # Display comprehensive summary of all hosts
+    #- name: Display domain join status summary for all hosts
+     # debug:
+      #  msg: |-
+       #   Domain Join Status Summary:
+        #  {% for host_info in host_status_summary %}
+         # - {{ host_info.host }}: {{ 'Already joined to domain' if host_info.already_joined else 'Needs to be joined to domain' }}
+          #{% endfor %}
+        
+          #{% if all_hosts_joined | default(false) %}
+          #All hosts are already joined to domain. Remaining tasks will be skipped.
+          #{% else %}
+          #Some hosts need to be joined to domain. Proceeding with domain join for those hosts.
+          #{% endif %}
+      #run_once: true
+      #delegate_to: localhost  
+     
+      # Display comprehensive summary of all hosts
     - name: Display domain join status summary for all hosts
       debug:
-        msg: |-
-          Domain Join Status Summary:
-          {% for host_info in host_status_summary %}
-          - {{ host_info.host }}: {{ 'Already joined to domain' if host_info.already_joined else 'Needs to be joined to domain' }}
-          {% endfor %}
-        
-          {% if all_hosts_joined | default(false) %}
-          All hosts are already joined to domain. Remaining tasks will be skipped.
-          {% else %}
-          Some hosts need to be joined to domain. Proceeding with domain join for those hosts.
-          {% endif %}
+        msg: "Domain Join Status Summary:\n{% for host_info in host_status_summary %}\n- {{ host_info.host }}: {{ 'Already joined to domain' if host_info.already_joined else 'Needs to be joined to domain' }}{% endfor %}\n\n{% if all_hosts_joined | default(false) %}\nAll hosts are already joined to domain. Remaining tasks will be skipped.{% else %}\nSome hosts need to be joined to domain. Proceeding with domain join for those hosts.{% endif %}"
       run_once: true
       delegate_to: localhost  
-      
+    
     #- name: Display domain join status summary
      # debug:
       #  msg: "All hosts are already joined to domain. Remaining tasks will be skipped."
@@ -252,7 +259,7 @@
       shell: sshpass -p "{{ password }}" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 {{ username }}@{{ ansible_host }} echo "SSH login successful"
       register: ssh_test_before
       ignore_errors: yes
-      #no_log: true
+      no_log: true
       when: not already_joined
 
     - name: Print full SSH test output
@@ -306,7 +313,7 @@
       shell: sshpass -p "{{ password }}" ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=10 {{ username }}@{{ ansible_host }} echo "SSH login successful"
       register: ssh_test_after
       ignore_errors: yes
-      #no_log: true
+      no_log: true
       when: not already_joined
 
     - name: Print full SSH test output
@@ -314,6 +321,7 @@
         var: ssh_test_after
         verbosity: 0
       when: not already_joined
+      no_log: true
         
     - name: Print detailed SSH test results
       debug:
@@ -324,6 +332,7 @@
           Stderr: {{ ssh_test_after.stderr }}
           Command: {{ ssh_test_after.cmd }}
       when: not already_joined
+      no_log: true
 
     - name: Print result of SSH login test after blacklisting
       debug:
