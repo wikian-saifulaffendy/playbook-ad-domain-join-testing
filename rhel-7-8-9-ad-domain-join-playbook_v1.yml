@@ -41,7 +41,8 @@
         
     - name: Display domain join status
       debug:
-        msg: "{{ 'Server is already properly joined to the domain.' if already_joined else 'Server needs to be joined to the domain.' }}"
+        msg: |-
+          - "{{ 'Server is already properly joined to the domain.' if already_joined else 'Server needs to be joined to the domain.' }}"
       
     # Create a group for hosts that need domain joining
     - name: Add host to domain_join group if needed
@@ -115,7 +116,8 @@
       
     - name: Check if running on RHEL 789
       fail:
-        msg: "This playbook only runs on RHEL 789 servers."
+        msg: 
+          - "This playbook only runs on RHEL 789 servers."
       when: ansible_distribution_major_version | int == 6
       tags: always
       
@@ -168,9 +170,9 @@
       no_log: true
       when: not already_joined
       
-    - name: Wait for 20 seconds after domain join
+    - name: Wait for 10 seconds after domain join
       pause:
-        seconds: 20 
+        seconds: 10 
       when: not already_joined and join_domain is defined
           
     - name: Print server join domain error message if any
@@ -232,11 +234,11 @@
           
         - name: Print result ID for AD user
           debug:
-            msg: >-
+            msg: |-
               {% if check_user_after.rc != 0 %}
-              Check failed: AD user "{{ username }}" does not exist on {{ ansible_facts['fqdn'] }}
+              - Check failed: AD user "{{ username }}" does not exist on {{ ansible_facts['fqdn'] }}
               {% else %}
-              Check Pass: AD user "{{ username }}" exists on {{ ansible_facts['fqdn'] }}
+              - Check Pass: AD user "{{ username }}" exists on {{ ansible_facts['fqdn'] }}
               {% endif %}
               
         - name: Verify LDAP port is in use
@@ -247,11 +249,11 @@
 
         - name: Print result LDAP port is in use
           debug:
-            msg: >-
+            msg: |-
               {% if check_ldap_after.rc != 0 %}
-              Check failed: LDAP port 636 is not listening on {{ ansible_facts['fqdn'] }}
+              - Check failed: LDAP port 636 is not listening on {{ ansible_facts['fqdn'] }}
               {% else %}
-              Check Pass: LDAP port 636 is listening on {{ ansible_facts['fqdn'] }}
+              - Check Pass: LDAP port 636 is listening on {{ ansible_facts['fqdn'] }}
               {% endif %}
       when: not already_joined
 
@@ -273,21 +275,21 @@
       
     - name: Print detailed SSH test results
       debug:
-        msg: |
-          SSH Test Results for {{ username }}@{{ ansible_facts['fqdn'] }}:
-          Return Code: {{ ssh_test_before.rc }}
-          Stdout: {{ ssh_test_before.stdout }}
-          Stderr: {{ ssh_test_before.stderr }}
-          Command: {{ ssh_test_before.cmd }} 
+        msg: |-
+          - SSH Test Results for {{ username }}@{{ ansible_facts['fqdn'] }}:
+          - Return Code: {{ ssh_test_before.rc }}
+          - Stdout: {{ ssh_test_before.stdout }}
+          - Stderr: {{ ssh_test_before.stderr }}
+          - Command: {{ ssh_test_before.cmd }} 
       when: not already_joined
           
     - name: Print SSH test result before blacklisting
       debug:
-        msg: >-
+        msg: |-
           {% if ssh_test_before.rc != 0 %}
-          Check failed: Unable to login as AD user '{{ username }}' on {{ ansible_facts['fqdn'] }}
+          - Check failed: Unable to login as AD user '{{ username }}' on {{ ansible_facts['fqdn'] }}
           {% else %}
-          Check Pass: Login as AD user '{{ username }}' on {{ ansible_facts['fqdn'] }} was successful
+          - Check Pass: Login as AD user '{{ username }}' on {{ ansible_facts['fqdn'] }} was successful
           {% endif %}
       when: not already_joined
 
@@ -328,12 +330,12 @@
         
     - name: Print detailed SSH test results
       debug:
-        msg: |
-          SSH Test Results for {{ username }}@{{ ansible_facts['fqdn'] }}:
-          Return Code: {{ ssh_test_after.rc }}
-          Stdout: {{ ssh_test_after.stdout }}
-          Stderr: {{ ssh_test_after.stderr }}
-          Command: {{ ssh_test_after.cmd }}
+        msg: |-
+          - SSH Test Results for {{ username }}@{{ ansible_facts['fqdn'] }}:
+          - Return Code: {{ ssh_test_after.rc }}
+          - Stdout: {{ ssh_test_after.stdout }}
+          - Stderr: {{ ssh_test_after.stderr }}
+          - Command: {{ ssh_test_after.cmd }}
       when: not already_joined
       no_log: true
 
@@ -345,10 +347,10 @@
     # Final status report - only for hosts that needed domain joining
     - name: Print final result of all checks
       debug:
-        msg: >-
+        msg: |-
           {% if check_user_after.rc == 0 and check_ldap_after.rc == 0 %}
-          Successfully joined server {{ ansible_facts['fqdn'] }} to the domain
+          - Successfully joined server {{ ansible_facts['fqdn'] }} to the domain
           {% else %}
-          Failed to join server {{ ansible_facts['fqdn'] }} to the domain. Check manually or rerun playbook.
+          - Failed to join server {{ ansible_facts['fqdn'] }} to the domain. Check manually or rerun playbook.
           {% endif %}
       when: not already_joined
