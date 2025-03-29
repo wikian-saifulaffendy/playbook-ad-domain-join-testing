@@ -71,17 +71,27 @@
     - name: Display domain join status summary for all hosts
       debug:
         msg: |-
-          Domain Join Status Summary:
-          {% for host_info in host_status_summary %}
-           - {{ host_info.host }}: 
-             {{ 'Already joined to domain' if host_info.already_joined else 'Needs to be joined to domain' }}
-          {% endfor %}
+                Domain Join Status Summary:
+                
+                {% for host_info in host_status_summary %}
+                
+                - {{ host_info.host }}: 
+                
+                {{ 'Already joined to domain' if host_info.already_joined else 'Needs to be joined to domain' }}
+                
+                {% endfor %}
       
-          {% if all_hosts_joined | default(false) %}
-          All hosts are already joined to domain. Remaining tasks will be skipped.
-          {% else %}
-          Some hosts need to be joined to domain. Proceeding with domain join for those hosts.
-          {% endif %}
+                {% if all_hosts_joined | default(false) %}
+          
+                All hosts are already joined to domain.
+                Remaining tasks will be skipped.
+          
+                {% else %}
+          
+                Some hosts need to be joined to domain. 
+                Proceeding with domain join for those hosts.
+          
+                {% endif %}
       run_once: true
       delegate_to: localhost
       
