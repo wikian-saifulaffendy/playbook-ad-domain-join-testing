@@ -200,7 +200,7 @@
 
     - name: Copy LDAP CERT
       copy:
-        src: wikilab-ca.cer
+        src: Wikilab-ca.cer
         dest: /etc/openldap/certs
         mode: "0655"
       when: not already_joined
