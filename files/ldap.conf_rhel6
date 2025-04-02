@@ -13,6 +13,6 @@
 #DEREF          never
 URI     ldaps://WIKILABS_AD.wikilab.asia
 BASE    dc=wikilab,dc=asia
-TLS_CACERTDIR /etc/openldap/certs
+TLS_CACERT /etc/openldap/certs/wikilab-ca.cer
 TLS_REQCERT demand
 
