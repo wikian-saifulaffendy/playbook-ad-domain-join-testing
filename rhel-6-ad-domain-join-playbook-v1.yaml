@@ -197,7 +197,7 @@
       
     - name: Wait for 10 seconds after restarting sssd
       pause:
-        seconds: 30
+        seconds: 10
       when: not already_joined
 
     # Post validation of Join Domain - Only for hosts that needed domain joining
@@ -289,7 +289,7 @@
       lineinfile:
         path: /etc/sssd/sssd.conf
         regexp: '^simple_allow_groups ='
-        line: 'simple_allow_users = $'
+        line: 'simple_allow_groups = $'
         create: false
         insertafter: 'access_provider = simple'
       when: not already_joined
@@ -342,6 +342,15 @@
         msg: "{{ 'All Users are blacklisted successfully - SSH access denied as expected' if ssh_test_after.rc != 0 else 'WARNING: User still has SSH access after blacklisting' }}"
       when: not already_joined
 
+    - name: Verify LDAP port is in use
+          shell: lsof -i:636
+          register: check_ldap_after
+          until: check_ldap_after.rc == 0
+          retries: 10
+          delay: 5  # 5 seconds between retries
+          changed_when: False
+          ignore_errors: True
+          
     # Final status report - only for hosts that needed domain joining
     - name: Print final result of all checks
       debug:
