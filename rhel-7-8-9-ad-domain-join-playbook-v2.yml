@@ -123,7 +123,7 @@
       when: not already_joined
 
     - name: Install realm package along with sssd
-     package:
+      package:
         name: "{{ item }}"
         state: latest
       with_items:
