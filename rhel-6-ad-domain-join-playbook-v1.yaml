@@ -212,17 +212,27 @@
         - name: Print result ID for AD user
           debug:
             msg: "{% if check_user_after.rc != 0 %}Check failed: AD user '{{ username }}' does not exist on {{ ansible_facts['fqdn'] }}{% else %}Check Pass: AD user '{{ username }}' exists on {{ ansible_facts['fqdn'] }}{% endif %}"
-            
+
+        - name: Wait for 10 seconds port listining
+          pause:
+            seconds: 10
+          when: not already_joined
+          
         - name: Verify LDAP port is in use
           shell: lsof -i:636
           register: check_ldap_after
           changed_when: False
-          ignore_errors: True           
+          ignore_errors: True 
+          
+        - name: Wait for 10 seconds port listining
+          pause:
+            seconds: 10
+          when: not already_joined
     
         - name: Print result LDAP port is in use
           debug:
             msg: "{% if check_ldap_after.rc != 0 %}Check failed: LDAP port 636 is not listening on {{ ansible_facts['fqdn'] }}{% else %}Check Pass: LDAP port 636 is listening on {{ ansible_facts['fqdn'] }}{% endif %}"
-      when: not already_joined
+          when: not already_joined
 
     # SSH testing - only for hosts that needed domain joining
     - name: Test SSH login before blacklisting (using execution nodes)
@@ -274,7 +284,16 @@
         create: false
         insertafter: 'access_provider = simple'
       when: not already_joined
-    
+
+    - name: Add simple_allow_groups setting to SSSD config
+      lineinfile:
+        path: /etc/sssd/sssd.conf
+        regexp: '^simple_allow_groups ='
+        line: 'simple_allow_users = $'
+        create: false
+        insertafter: 'access_provider = simple'
+      when: not already_joined
+      
     - name: Wait for 10 seconds after blacklisting users
       pause:
         seconds: 10
