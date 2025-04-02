@@ -32,7 +32,7 @@ ldap_id_use_start_tls = False
 # Suppoting parameters addition in sssd.conf to support whitelisiting. #
 access_provider = simple
 simple_allow_users = $
-#simple_allow_groups = $
+simple_allow_groups = $
 
 dns_discovery_domain = wikilab.asia
 enumerate = False
