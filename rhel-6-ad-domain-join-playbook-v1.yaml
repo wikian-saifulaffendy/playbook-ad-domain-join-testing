@@ -272,7 +272,7 @@
         line: 'simple_allow_users = root'
         create: false
         insertafter: 'access_provider = simple'
-     when: not already_joined
+      when: not already_joined
     
     - name: Wait for 10 seconds after blacklisting users
       pause:
