@@ -343,13 +343,13 @@
       when: not already_joined
 
     - name: Verify LDAP port is in use
-          shell: lsof -i:636
-          register: check_ldap_after
-          until: check_ldap_after.rc == 0
-          retries: 10
-          delay: 5  # 5 seconds between retries
-          changed_when: False
-          ignore_errors: True
+      shell: lsof -i:636
+      register: check_ldap_after
+      until: check_ldap_after.rc == 0
+      retries: 10
+      delay: 5  # 5 seconds between retries
+      changed_when: False
+      ignore_errors: True
           
     # Final status report - only for hosts that needed domain joining
     - name: Print final result of all checks
