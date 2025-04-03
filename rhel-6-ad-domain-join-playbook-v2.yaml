@@ -286,7 +286,7 @@
         regexp: '^simple_allow_groups ='
         line: 'simple_allow_groups = $'
         create: false
-        insertafter: 'simple_allow_users = $'
+        insertafter: 'simple_allow_users = \$'
       when: not already_joined
       
     - name: Restart SSSD after blacklisting
