@@ -1,42 +1,86 @@
 ---
-- name: Detect and Execute OS-specific tasks
-  #hosts: "{{host_list}}"
-  hosts: all  
-  gather_facts: yes
+- name: Manage User and Group Access with realm permit/deny (Generic)
+  hosts: all
+  become: true
   vars:
-    whitelist_add_users: "{{ add_users | default('') }}"
-    whitelist_add_groups: "{{ add_groups| default('') }}"    
-    whitelist_remove_users: "{{ remove_users | default('') }}"
-    whitelist_remove_groups: "{{ remove_groups| default('') }}"
+    # Example: Configure the following variables during runtime
+    # add_users: ["newuser1", "newuser2"]    # List of members to add (format: username)
+    # remove_users: ["tdsaiful"]             # List of members to be removed (format: username)
+    # add_groups: ["newgroup1"]              # List of groups to be added (format: groupname)
+    # remove_groups: ["oldgroup"]            # List of groups to be removed (format: groupname)
   
-  ## Section to add specific users & Group from Whitelisting ##
   tasks:
-  - name: Add users to whitelist
-    shell: realm permit {{ whitelist_add_users }}
-    when: whitelist_add_users != ''
-    register: add_users_output
-    
-  - name: Add groups to whitelist
-    shell: realm permit -g {{ whitelist_add_groups }}
-    when: whitelist_add_groups != ''
-    register: add_groups_output
-  
-  ## Section to remove specific users & Group from Whitelisting ##
-  - name: Remove users from whitelist
-    shell: realm deny {{ whitelist_remove_users }}
-    when: whitelist_remove_users != ''
-    register: remove_users_output
-    
-  - name: Remove groups from whitelist
-    shell: realm deny -g {{ whitelist_remove_groups }}
-    when: whitelist_remove_groups != ''
-    register: remove_groups_output
-    
-  - name: Display results
-    debug:
-      msg: |
-        Users added: {{ whitelist_add_users if whitelist_add_users != '' else 'None' }}
-        Groups added: {{ whitelist_add_groups if whitelist_add_groups != '' else 'None' }}
-        Users removed: {{ whitelist_remove_users if whitelist_remove_users != '' else 'None' }}
-        Groups removed: {{ whitelist_remove_groups if whitelist_remove_groups != '' else 'None' }}
-...
+    - name: Check if realm command is available
+      command: which realm
+      register: realm_check
+      failed_when: false
+      changed_when: false
+      
+    - name: Fail if realm is not installed
+      fail:
+        msg: "The realm command is not available. Please install realmd package first."
+      when: realm_check.rc != 0
+      
+    - name: Create backup of current realm permit configuration
+      shell: realm list --name-only | xargs -I{} realm list {} | grep "permitted" > /tmp/realm_permit_backup_$(date +%Y%m%d_%H%M%S).txt
+      changed_when: false
+      ignore_errors: true
+      
+    - name: Add users to whitelist
+      command: "realm permit {{ item }}"
+      loop: "{{ add_users | default([]) }}"
+      when: add_users is defined and add_users | length > 0
+      register: add_users_result
+      failed_when: 
+        - add_users_result.rc != 0
+        - "'already permitted' not in add_users_result.stderr"
+      changed_when: add_users_result.rc == 0
+      
+    - name: Remove users from whitelist (using deny)
+      command: "realm deny {{ item }}"
+      loop: "{{ remove_users | default([]) }}"
+      when: remove_users is defined and remove_users | length > 0
+      register: deny_users_result
+      failed_when: 
+        - deny_users_result.rc != 0
+        - "'not permitted' not in deny_users_result.stderr"
+      changed_when: deny_users_result.rc == 0
+      
+    - name: Add groups to whitelist
+      command: "realm permit -g {{ item }}"
+      loop: "{{ add_groups | default([]) }}"
+      when: add_groups is defined and add_groups | length > 0
+      register: add_groups_result
+      failed_when: 
+        - add_groups_result.rc != 0
+        - "'already permitted' not in add_groups_result.stderr"
+      changed_when: add_groups_result.rc == 0
+      
+    - name: Remove groups from whitelist (using deny)
+      command: "realm deny -g {{ item }}"
+      loop: "{{ remove_groups | default([]) }}"
+      when: remove_groups is defined and remove_groups | length > 0
+      register: deny_groups_result
+      failed_when: 
+        - deny_groups_result.rc != 0
+        - "'not permitted' not in deny_groups_result.stderr"
+      changed_when: deny_groups_result.rc == 0
+      
+    - name: Get current permission status
+      shell: "realm list --name-only | xargs -I{} realm list {} | grep permitted"
+      register: current_permissions
+      changed_when: false
+      ignore_errors: true
+      
+    - name: Display user and group permission changes
+      debug:
+        msg: |
+          === Permission Management Summary ===
+          
+          Users added: {% if add_users is defined and add_users | length > 0 %}{{ add_users | join(', ') }}{% else %}None{% endif %}
+          Users removed: {% if remove_users is defined and remove_users | length > 0 %}{{ remove_users | join(', ') }}{% else %}None{% endif %}
+          Groups added: {% if add_groups is defined and add_groups | length > 0 %}{{ add_groups | join(', ') }}{% else %}None{% endif %}
+          Groups removed: {% if remove_groups is defined and remove_groups | length > 0 %}{{ remove_groups | join(', ') }}{% else %}None{% endif %}
+          
+          Current permission status:
+          {{ current_permissions.stdout if current_permissions.stdout is defined and current_permissions.stdout != '' else 'No explicit permissions set.' }}
