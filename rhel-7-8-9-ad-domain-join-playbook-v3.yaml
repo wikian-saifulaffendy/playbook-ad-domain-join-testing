@@ -314,3 +314,4 @@
       debug:
         msg: "{% if check_user_after.rc == 0 and check_ldap_after.rc == 0 %}Successfully joined server {{ ansible_facts['fqdn'] }} to the domain{% else %}Failed to join server {{ ansible_facts['fqdn'] }} to the domain. Check manually or rerun playbook.{% endif %}"
       when: not already_joined
+...
