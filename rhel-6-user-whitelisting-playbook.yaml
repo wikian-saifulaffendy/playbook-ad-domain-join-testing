@@ -1,8 +1,8 @@
 ---
 - name: Whitelisting Users with simple_allow_users and simple_allow_groups in sssd.conf (RHEL 6)
-  hosts: "{{ host_list }}"
+  hosts: all
+  #hosts: "{{ host_list }}"
   become: true
-
   vars:
     # Example: Configure the following variables during runtime
     # add_users: ["newuser1", "newuser2"]    # List of members to add (format: username)
