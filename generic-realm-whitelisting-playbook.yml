@@ -25,11 +25,19 @@
       shell: realm list --name-only | xargs -I{} realm list {} | grep "permitted" > /tmp/realm_permit_backup_$(date +%Y%m%d_%H%M%S).txt
       changed_when: false
       ignore_errors: true
+    
+    # Filter out empty or undefined values
+    - name: Set filtered user and group lists
+      set_fact:
+        filtered_add_users: "{{ add_users | default([]) | select('string') | select('regex', '.+') | list }}"
+        filtered_remove_users: "{{ remove_users | default([]) | select('string') | select('regex', '.+') | list }}"
+        filtered_add_groups: "{{ add_groups | default([]) | select('string') | select('regex', '.+') | list }}"
+        filtered_remove_groups: "{{ remove_groups | default([]) | select('string') | select('regex', '.+') | list }}"
       
     - name: Add users to whitelist
       command: "realm permit {{ item }}"
-      loop: "{{ add_users | default([]) }}"
-      when: add_users is defined and add_users | length > 0
+      loop: "{{ filtered_add_users }}"
+      when: filtered_add_users | length > 0
       register: add_users_result
       failed_when: 
         - add_users_result.rc != 0
@@ -38,8 +46,8 @@
       
     - name: Remove users from whitelist (using deny)
       command: "realm deny {{ item }}"
-      loop: "{{ remove_users | default([]) }}"
-      when: remove_users is defined and remove_users | length > 0
+      loop: "{{ filtered_remove_users }}"
+      when: filtered_remove_users | length > 0
       register: deny_users_result
       failed_when: 
         - deny_users_result.rc != 0
@@ -48,8 +56,8 @@
       
     - name: Add groups to whitelist
       command: "realm permit -g {{ item }}"
-      loop: "{{ add_groups | default([]) }}"
-      when: add_groups is defined and add_groups | length > 0
+      loop: "{{ filtered_add_groups }}"
+      when: filtered_add_groups | length > 0
       register: add_groups_result
       failed_when: 
         - add_groups_result.rc != 0
@@ -58,8 +66,8 @@
       
     - name: Remove groups from whitelist (using deny)
       command: "realm deny -g {{ item }}"
-      loop: "{{ remove_groups | default([]) }}"
-      when: remove_groups is defined and remove_groups | length > 0
+      loop: "{{ filtered_remove_groups }}"
+      when: filtered_remove_groups | length > 0
       register: deny_groups_result
       failed_when: 
         - deny_groups_result.rc != 0
@@ -67,20 +75,19 @@
       changed_when: deny_groups_result.rc == 0
       
     - name: Get current permission status
-      shell: "realm list --name-only | xargs -I{} realm list {} | grep permitted"
+      shell: "realm list --name-only | xargs -I{} realm list {} | grep permitted || echo 'No explicit permissions set.'"
       register: current_permissions
       changed_when: false
-      ignore_errors: true
       
     - name: Display user and group permission changes
       debug:
         msg: |
           === Permission Management Summary ===
           
-          Users added: {% if add_users is defined and add_users | length > 0 %}{{ add_users | join(', ') }}{% else %}None{% endif %}
-          Users removed: {% if remove_users is defined and remove_users | length > 0 %}{{ remove_users | join(', ') }}{% else %}None{% endif %}
-          Groups added: {% if add_groups is defined and add_groups | length > 0 %}{{ add_groups | join(', ') }}{% else %}None{% endif %}
-          Groups removed: {% if remove_groups is defined and remove_groups | length > 0 %}{{ remove_groups | join(', ') }}{% else %}None{% endif %}
+          Users added: {{ filtered_add_users | join(', ') if filtered_add_users | length > 0 else 'None' }}
+          Users removed: {{ filtered_remove_users | join(', ') if filtered_remove_users | length > 0 else 'None' }}
+          Groups added: {{ filtered_add_groups | join(', ') if filtered_add_groups | length > 0 else 'None' }}
+          Groups removed: {{ filtered_remove_groups | join(', ') if filtered_remove_groups | length > 0 else 'None' }}
           
           Current permission status:
-          {{ current_permissions.stdout if current_permissions.stdout is defined and current_permissions.stdout != '' else 'No explicit permissions set.' }}
+          {{ current_permissions.stdout }}
