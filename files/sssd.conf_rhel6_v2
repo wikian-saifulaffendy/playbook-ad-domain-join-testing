@@ -36,7 +36,6 @@ ldap_id_use_start_tls = False
 access_provider = simple
 
 
-
 ## Extra Parameters ##
 dns_discovery_domain = wikilab.asia
 enumerate = False
