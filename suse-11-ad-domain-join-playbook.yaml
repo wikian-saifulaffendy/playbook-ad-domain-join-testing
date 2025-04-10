@@ -123,7 +123,7 @@
 
   tasks:
     # Skip all tasks if all hosts are already joined
-    - name: Skip all tasks if all hosts are joined
+    - name: Skip all tasks if all hosts are already joined
       meta: end_play
       when: skip_remaining_tasks | default(false)
       
