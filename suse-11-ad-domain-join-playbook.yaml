@@ -261,12 +261,6 @@
       no_log: true
       when: not already_joined
 
-    - name: Check if user {{ username }} exists
-      shell: getent passwd "{{ username }}"
-      register: check_user
-      changed_when: false
-      ignore_errors: true
-
     - name: Verify LDAP port is in use
       shell: lsof -i:636
       register: check_ldap_after
@@ -377,6 +371,12 @@
         msg: "{{ 'All Users are blacklisted successfully - SSH access denied as expected' if ssh_test_after.rc != 0 else 'WARNING: User still has SSH access after blacklisting' }}"
       when: not already_joined
     ## End Blacklisting Section & SSH Login Troubleshooting Section ##
+
+    - name: Check if user {{ username }} exists
+      shell: getent passwd "{{ username }}"
+      register: check_user
+      changed_when: false
+      ignore_errors: true
 
     ## LDAP Port Verification ##
     - name: Verify LDAP port is in use
