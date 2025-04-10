@@ -209,7 +209,8 @@
       when: not already_joined
 
     - name: Join domain using net ads
-      shell: echo -n "{{ password }}" | net ads join -U {{ username }}@{{ domain_name }} --verbose
+      #shell: echo -n "{{ password }}" | net ads join -U {{ username }}@{{ domain_name }} --verbose
+      shell: net ads join -U {{ username }}@{{ domain_name }}%{{ password }} --verbose
       register: join_domain
       changed_when: False
       ignore_errors: yes
