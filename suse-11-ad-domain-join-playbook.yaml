@@ -153,19 +153,14 @@
       when: not already_joined
 
     - name: Install required packages using zypper
-      zypper:
-        name:
-          - sssd-tools
-          - sssd-32bit
-          - sssd
-          - samba-winbind-32bit
-          - samba-winbind
-          - pam-modules
-          - openldap2-client
-          - libiniparser0-32bit
-          - libiniparser0
-          - krb5-client
-        state: present
+      command: >
+        zypper --non-interactive install --auto-agree-with-licenses
+        sssd-tools sssd-32bit \
+        sssd samba-winbind-32bit \
+        samba-winbind pam-modules \
+        openldap2-client libiniparser0-32bit 
+        libiniparser0 krb5-client
+      ignore_errors: true
       when: not already_joined
 
     - name: Join domain using net ads
