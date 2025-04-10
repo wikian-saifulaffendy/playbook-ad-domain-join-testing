@@ -94,7 +94,6 @@
       delegate_to: localhost
       run_once: true
  
-  
   ## Playbook Main Task Section ##
   tasks:
     ## Skip all tasks if all hosts are already joined ##
@@ -149,54 +148,24 @@
         mode: '0644'
       when: not already_joined
 
-    - name: Ensure temporary directory exists
-      file:
-        path: /tmp/suse11_adpackages
-        state: directory
-        mode: '0755'
+    - name: Refresh zypper repositories
+      command: zypper --non-interactive refresh
       when: not already_joined
 
-    # Install packages on SLES 11
-    - name: Transfer suse11_adpackages.tar.gz from local /files directory
-      copy:
-        src: suse11_adpackages.tar.gz
-        dest: /tmp/suse11_adpackages.tar.gz
-        mode: '0644'
-      when: not already_joined
-
-    - name: Extract suse11_adpackages.tar.gz
-      unarchive:
-        src: /tmp/suse11_adpackages.tar.gz
-        dest: /tmp/suse11_adpackages
-        remote_src: true
-      when: not already_joined
-
-    - name: Install RPM packages using zypper
-      command: zypper --non-interactive install {{ item }}
-      with_items:
-        - /tmp/suse11_adpackages/sssd-tools-1.9.4-0.16.1.x86_64.rpm
-        - /tmp/suse11_adpackages/sssd-32bit-1.9.4-0.16.1.x86_64.rpm
-        - /tmp/suse11_adpackages/sssd-1.9.4-0.16.1.x86_64.rpm
-        - /tmp/suse11_adpackages/samba-winbind-32bit-3.6.3-0.58.1.x86_64.rpm
-        - /tmp/suse11_adpackages/samba-winbind-3.6.3-0.58.1.x86_64.rpm
-        - /tmp/suse11_adpackages/pam-modules-11-1.25.26.x86_64.rpm
-        - /tmp/suse11_adpackages/openldap2-client-2.4.26-0.30.1.x86_64.rpm
-        - /tmp/suse11_adpackages/libiniparser0-32bit-2.17-87.17.x86_64.rpm
-        - /tmp/suse11_adpackages/libiniparser0-2.17-87.17.x86_64.rpm
-        - /tmp/suse11_adpackages/krb5-client-1.6.3-133.49.66.1.x86_64.rpm
-      ignore_errors: true
-      when: not already_joined
-
-    - name: Clean up temporary files
-      file:
-        path: "/tmp/suse11_adpackages.tar.gz"
-        state: absent
-      when: not already_joined
-
-    - name: Clean up temporary directory
-      file:
-        path: /tmp/suse11_adpackages
-        state: absent
+    - name: Install required packages using zypper
+      zypper:
+        name:
+          - sssd-tools
+          - sssd-32bit
+          - sssd
+          - samba-winbind-32bit
+          - samba-winbind
+          - pam-modules
+          - openldap2-client
+          - libiniparser0-32bit
+          - libiniparser0
+          - krb5-client
+        state: present
       when: not already_joined
 
     - name: Join domain using net ads
@@ -296,6 +265,12 @@
       ignore_errors: true
       no_log: true
       when: not already_joined
+
+    - name: Check if user {{ username }} exists
+      shell: getent passwd "{{ username }}"
+      register: check_user
+      changed_when: false
+      ignore_errors: true
 
     - name: Verify LDAP port is in use
       shell: lsof -i:636
