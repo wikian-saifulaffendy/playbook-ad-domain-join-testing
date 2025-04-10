@@ -34,13 +34,13 @@
     # Pre-checks to determine if domain join is needed
     - name: Check if user {{ username }} exists
       shell: getent passwd "{{ username }}"
-      register: check_user
+      register: check_user_pre
       changed_when: False
       ignore_errors: True
       
     - name: Check if LDAP port is in use
       shell: lsof -i:636
-      register: check_ldap
+      register: check_ldap_pre
       changed_when: False
       ignore_errors: True
       
@@ -49,13 +49,13 @@
         host_domain_check: {
           "host": "{{ ansible_facts['fqdn'] }}", 
           "os_type": "SUSE {{ ansible_distribution_major_version }}", 
-          "user_check": "{{ check_user.rc }}", 
-          "ldap_check": "{{ check_ldap.rc }}"
+          "user_check_pre": "{{ check_user_pre.rc }}", 
+          "ldap_check_pre": "{{ check_ldap_pre.rc }}"
         }
 
     - name: Add already_joined flag
       set_fact:
-        already_joined: "{{ check_user.rc == 0 and check_ldap.rc == 0 }}"
+        already_joined: "{{ check_user_pre.rc == 0 and check_ldap_pre.rc == 0 }}"
 
     - name: Update host_domain_check with already_joined flag
       set_fact:
@@ -102,8 +102,8 @@
           Domain Join Status Summary:
           {% for check in consolidated_domain_checks %}
           - Host: {{ check.host }} ({{ check.os_type }})
-            User Check: {{ 'PASS' if check.user_check == '0' else 'FAIL' }}
-            LDAP Check: {{ 'PASS' if check.ldap_check == '0' else 'FAIL' }}
+            User Check: {{ 'PASS' if check.user_check_pre == '0' else 'FAIL' }}
+            LDAP Check: {{ 'PASS' if check.ldap_check_pre == '0' else 'FAIL' }}
             Status: {{ 'Already joined to domain' if check.already_joined else 'Needs to be joined to domain' }}
           {% endfor %}
           
@@ -346,12 +346,16 @@
         post_join_check: {
           "host": "{{ ansible_facts['fqdn'] }}", 
           "os_type": "SUSE {{ ansible_distribution_major_version }}", 
-          "user_check": "{{ check_user_after.rc | default(1) }}", 
-          "ldap_check": "{{ check_ldap_after.rc | default(1) }}",
-          "ssh_check": "{{ ssh_test.rc | default(1) }}",
-          "join_successful": "{{ check_user_after.rc == 0 and check_ldap_after.rc == 0 and ssh_test.rc == 0 }}"
+          "user_check_post": "{{ check_user_after.rc | default(1) }}", 
+          "ldap_check_post": "{{ check_ldap_after.rc | default(1) }}",
+          "ssh_check_post": "{{ ssh_test.rc | default(1) }}"
         }
       when: not already_joined and check_user_after is defined and check_ldap_after is defined and ssh_test is defined
+
+    - name: Update post_join_check with join status
+      set_fact:
+        post_join_check: "{{ post_join_check | combine({'join_successful': check_user_after.rc == 0 and check_ldap_after.rc == 0 and ssh_test.rc == 0}) }}"
+      when: not already_joined and post_join_check is defined
 
     # Add post-join result to collection
     - name: Add post-join check to domain_check_results
@@ -398,10 +402,10 @@
           DOMAIN JOIN RESULTS FOR THIS RUN:
           {% for check in consolidated_post_checks | default([]) %}
           - Host: {{ check.host }} ({{ check.os_type }})
-            User Check: {{ 'PASS' if check.user_check == 0 else 'FAIL' }}
-            LDAP Check: {{ 'PASS' if check.ldap_check == 0 else 'FAIL' }}
-            SSH Check: {{ 'PASS' if check.ssh_check == 0 else 'FAIL' }}
-            Overall Status: {{ 'SUCCESSFUL' if check.join_successful else 'FAILED' }}
+            User Check: {{ 'PASS' if check.user_check_post == 0 else 'FAIL' }}
+            LDAP Check: {{ 'PASS' if check.ldap_check_post == 0 else 'FAIL' }}
+            SSH Check: {{ 'PASS' if check.ssh_check_post == 0 else 'FAIL' }}
+            Overall Status: {{ 'SUCCESSFUL' if (check.user_check_post == 0 and check.ldap_check_post == 0 and check.ssh_check_post == 0) else 'FAILED' }}
           {% endfor %}
           
           {% if consolidated_post_checks|default([])|length == 0 and not skip_remaining_tasks %}
