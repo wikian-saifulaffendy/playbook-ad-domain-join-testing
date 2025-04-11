@@ -1,6 +1,7 @@
 ---
   - name: Whitelisting Users with simple_allow_users in sssd.conf (SLES 11 SP4)
-    hosts: "{{ host_list }}"
+    #hosts: "{{ host_list }}"
+    hosts: all
     become: true
   
     vars:
