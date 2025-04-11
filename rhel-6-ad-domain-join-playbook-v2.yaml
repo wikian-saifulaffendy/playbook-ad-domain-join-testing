@@ -215,7 +215,8 @@
         - name: Print result ID for AD user
           debug:
             msg: "{% if check_user_after.rc != 0 %}Check failed: AD user '{{ username }}' does not exist on {{ ansible_facts['fqdn'] }}{% else %}Check Pass: AD user '{{ username }}' exists on {{ ansible_facts['fqdn'] }}{% endif %}"
-
+      when: not already_joined  
+      
     ## SSH testing - only for hosts that needed domain joining ##
     - name: Test SSH login before blacklisting (using execution nodes)
       delegate_to: "{{ hostvars['localhost']['ansible_controller_host'] | default('localhost') }}"
@@ -229,7 +230,8 @@
       shell: lsof -i:636
       register: check_ldap_after
       changed_when: false
-      ignore_errors: true 
+      ignore_errors: true
+      when: not already_joined
         
     - name: Print result LDAP port is in use
       debug:
@@ -344,6 +346,7 @@
       delay: 5  # 5 seconds between retries
       changed_when: false
       ignore_errors: true
+      when: not already_joined
           
     ## Final status report - only for hosts that joined domain ##
     - name: Print final result of all checks
