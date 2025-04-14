@@ -7,6 +7,7 @@
     domain_name: wikilab.asia
     username: "{{ user }}"
     password: "{{ pass }}"
+    ansible_python_interpreter: /usr/bin/env python
     domain_check_results: []
     
   ## Pre-Task Section of Playbook ##
