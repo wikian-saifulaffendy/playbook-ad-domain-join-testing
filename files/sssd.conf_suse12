@@ -1,0 +1,33 @@
+[sssd]
+domains = isddc.men.maxis.com.my
+config_file_version = 2
+services = nss, pam
+#debug_level = 9
+
+[nss]
+fallback_homedir = /home/%u
+default_shell = /bin/bash
+#debug_level = 9
+
+[domain/isddc.men.maxis.com.my]
+id_provider = ldap
+auth_provider = ldap
+access_provider = simple
+ldap_uri = ldaps://kpngdcm02.isddc.men.maxis.com.my, ldaps://cisddc03.isddc.men.maxis.com.my
+ldap_search_base = dc=isddc,dc=men,dc=maxis,dc=com,dc=my
+ldap_default_bind_dn = mvenkata@maxis.com.my
+ldap_default_authtok_type = password
+ldap_default_authtok = Q@erty87654321
+ldap_user_object_class = person
+ldap_group_object_class = group
+ldap_schema = ad
+ldap_referrals = False
+ldap_id_mapping = True
+dns_discovery_domain = isddc.men.maxis.com.my
+enumerate = false
+cache_credentials = true
+ldap_id_use_start_tls = False
+case_sensitive = False
+simple_allow_users = $, mvenkata, fongks
+simple_allow_groups = $,
+#debug_level = 9
