@@ -1,4 +1,4 @@
-i---
+---
 - name: SUSE 12 & 15 AD-Domain-join Playbook (Pre-Validation & Post-Validation)
   #hosts: "{{ host_list }}"
   hosts: all
