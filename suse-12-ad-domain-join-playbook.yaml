@@ -173,7 +173,7 @@
       
     - name: Modify SSSD Configuration
       copy:
-        src: suse-12-15-sssd.conf
+        src: suse-12-sssd.conf
         dest: /etc/sssd/sssd.conf
         mode: "0600"
       when: not already_joined
