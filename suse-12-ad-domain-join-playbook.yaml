@@ -121,7 +121,7 @@
     ## Common setup for SUSE 12 - only for hosts that need joining ##
     - name: Modify ldap Configuration
       copy:
-        src: ldap.conf_suse
+        src: suse-12-ldap.conf
         dest: /etc/openldap/ldap.conf
         mode: "0644"
       when: not already_joined
