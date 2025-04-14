@@ -154,7 +154,7 @@
       when: not already_joined
 
     - name: Install realm RPM using rpm command
-      command: zypper --non-interactive install /tmp/realmd-0.16.3-lp151.2.4.x86_64.rpm
+      command: zypper --non-interactive --no-gpg-checks install /tmp/realmd-0.16.3-lp151.2.4.x86_64.rpm
       ignore_errors: yes
       when: not already_joined
 
